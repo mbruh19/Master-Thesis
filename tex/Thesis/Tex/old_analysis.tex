@@ -1,0 +1,104 @@
+\section{Experimental Analysis}
+
+I plan to divide this into two parts. The first part will outline what experiments will be done, what the purpose is and what the settings are. The second part will actually show the results and describe them. \\
+
+Please note that the sections Experiment 1, 1a, 1b and 2 is written before our meeting on the 11th of April. 
+
+\subsection{Experiment 1}
+
+As a first experiment I test the four objective functions described in the previous section, where for the pairwise distance objective function I use both $p=1$ and $p= 2$. In order for it to be a fair comparison against the results in (\cite{icarte2019}), (\cite{thorbjarnason2023}) and (\cite{ambrogio2023}) I use a network architechture that is used in two of the three mentioned papers. The network architechture is with a single layer with 16 neurons, so the structure is $[784, 16, 10]$, since the experiment is done for the classical MNIST dataset. This structure gives a total of $784 \cdot 16 + 16 \cdot 10 = 12704$ weights to learn. The time limit, for the entire program which includes the loading and selection of the entire MNIST dataset, is set to 90 seconds. The experiments test the performance of the four objective function on balanced datasets, as this are the practice used elsewhere. I test the performance on one to ten samples per class, so the total number of training samples ranges from 10 to 100. The network used is a TNN network and the LS algorithm is an Iterated Local Search (ILS) algorithm. The search is structured as follows: After a random solution is created the solver starts iterating through all the nodes in the network ($16 + 10$) and tests simultaneously, but independently from each other, what would happen if their values changes. Notice that for a TNN this gives $784 \cdot 2 = 1568$ possible moves for the 16 nodes in the hidden layer and $16 \cdot 2 = 32$ for the output layer, since the weights can take 3 values each. For each node the solver then picks the move that has the largest improvement on the objective function. If this improvement is above 0, the move is accepted and the solution is updated. When the solver has iterated through all nodes without finding an improving move the solution is in a local optima. If the current solution is the best found so far, in terms of the objective function value, it is saved. Otherwise the solution returns to the best found so far and makes a perturbation, i.e. it chooses a number of weights randomly and change the values of them randomly before the iterated improvement phase is restarted. For the number of weights to change randomly I use 100. The resulting testing accuracies can be seen in Figure 1. The testing is done on 800 samples from each class so a total number of 8000 samples is tested. \\
+
+The cross-entropy and the integer objective function outperforms the pairwise distance objective functions significantly. The cross-entropy reaches a maximum testing accuracy of 54.66 \% with 100 training samples. Notice, that this is already close to the best results obtained by \cite{icarte2019}, but where they used a time limit of 2 hours, I used one of 90 seconds. Similarly, this already beat the best result obtained by \cite{thorbjarnason2023}, who reached 51.1 \% in average over five runs, but where the average runtime was 1852 seconds. \\
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Figures/exp1.png}
+    \caption{The testing accuracies for Experiment 1}
+    \label{Figure 1}
+\end{figure}
+
+\subsubsection{Experiment 1a}
+To see how the results scale with an increasing number of training samples, I run the same experiment again, but this time only for the cross-entropy and integer objective functions. The number of training samples ranges from 100 to 1000. Again, it is the same network and a time limit of only 90 seconds. The maximum accuracy reached is now at 66 \% but this time with 900 training samples. It is, however, clear to see that the algorithm scales well with increasing number of training samples, which have been known to be a problem for MIP solvers. The results can be seen in Figure 2. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Figures/exp1a.png}
+    \caption{The testing accuracies for Experiment 1a}
+    \label{Figure 2}
+\end{figure}
+
+\subsubsection{Experiment 1b}
+In this experiment I run the same experiment as 1a, except that I now use a BNN and only a time limit of 60 seconds. The maximum accuracy now reaches almost 76 \% for the integer objective function. Generally, the two objective functions perform very similarly, which is in contrast to the results in of experiment 1a, where the cross entropy seemed to be better. A possible reason for this is that it takes longer time for the cross-entropy objective function to end in a local optima than the integer objective function, thus the solution gets perturbed less times, meaning that it does not explore as much. The reason that BNN performs better than TNN for both objective functions in shorter time is simply that the nature of a BNN allows for some very optimized delta evaluations, whereas a TNN needs more work in each delta evaluation. Thus, the BNN is simply faster and can explore more in shorter time, which evidently makes up for the fact that the weights are more restricted in this case. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Figures/exp1b.png}
+    \caption{The testing accuracies for Experiment 1b}
+    \label{Figure 3}
+\end{figure}
+
+
+
+\subsection{Experiment 2}
+In this experiment I test how the same algorithm perform on networks with different sizes. Again I use a TNN, a balanced training set of 500 training samples and a time limit of 120 seconds. The results can be seen in Table 1. Initially, the test accuracy increases with the numbers of neurons in the case of a single hidden layer. However, as the number of neurons grow to 128 or 256, the starts to decrease. There can be several possible reasons for this. One is that the solver is not given enough time to get to a good solution. It might also be the case that it is overfitting and thus underperforming on the test dataset. For the cases with two hidden layers, the results are not that good. The reasons for this might be that the training set of 500 samples is too small for the network to be able to learn enough. 
+
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|l|l|}
+    \hline
+    Neurons in hidden layers & 16     & 32     & 64     & 128    & 256    \\ \hline
+    One hidden layer         & 0.6298 & 0.6914 & 0.7098 & 0.675  & 0.5606 \\ \hline
+    Two hidden layers        & 0.5334 & 0.4846 & 0.5653 & 0.5116 & 0.4338 \\ \hline
+    \end{tabular}
+    \caption{The results for experiment 4. }
+    \label{Table 1}
+\end{table}
+
+\subsection{Experiment 3}
+In this section I have implemented a sporadic local search algorithm. It works as follows: It iterates over batches from the dataset. Before using iterated improvement for a batch, a subset of the weights are selected by sampling from a Bernoulli-distribution with parameter $p$. Thus, $p = 0.1$, means that each weight has 10 \% chance of being selected for that iteration. The Delta Evaluation have been modified such that it does not calculate the deltas for the weights that are not selected, which improves the running time. After the iterated improvement phase has completed for a batch, meaning that the solution has reached a local optima, the new batch is chosen, the search weights are resampled and it continues like this. A method like this are, even though the $p$ parameter are chosen to be quite low, subject to overfitting and the solution can be very dependent on the current batch. As a method to overcome this I use a method similar to early stopping for choosing the solution that is returned. For every 10 batches that have been trained, 2000 samples from the validation set is randomly chosen and the validation accuracy is calculated for the current solution and I return the solution with the highest validation accuracy. As training set I use 12000 samples from the MNIST training set. This number is chosen such that it does not explode in running time. I use batch sizes ranging from 100 to 600 and all data are seen 10 times, thus for 100 batches, 1200 iterated improvement phases are needed and as such the validation accuracy is calculated 120 times. In this experiment I include a single hidden layer with 64 neurons and $p = 0.1$. The network type is a BNN.\\
+
+The results can be seen in Table 2, where the test accuracy are shown for the solution that the algorithm returned. Not surprisingly it is evident that larger batches helps generalizing. The runtime decreases significantly using larger batches as there are fewer iterated improvement phases, but the results are still better. Another thing to note is how the runtime for the cross-entropy objective function are much longer than the integer objective function. The reason for this is likely that the cross-entropy objective function for each iterated improvement phase can find more improving moves (the threshold are zero), and thus each iterated improvement phase takes longer. This might also be the reason why it does not generalize too well in this case - it has a tendency to overfit to a specific batch. The best results are for the integer objective function and with a batch size of 600. This gives 20 calculated validation accuracies, which can be seen in Figure 4. I also calculate the training accuracy to illustrate how large the overfitting gap is. As it can be seen from the plot, in this case it is the solution after 80 batches, that has the highest validation accuracy and thus it is this one that is returned by the algorithm.  
+
+
+\input{Tables/exp5table.tex}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Figures/exp5plot.png}
+    \caption{The validation and training accuracies for Experiment 3}
+    \label{Figure 4}
+\end{figure}
+
+\subsection{Experiment 3a}
+In experiment 3, the idea was to test if it helped the model to generalize by seeing the data many times, but each time for a short period of time. In this experiment, the goal is to test if it is better to see the data less times, but use more time each time. The way I do this is by almost the same algorithm, but instead of iterated improvement, I use iterated local search. The batch size is set to 600, the training dataset is again 12000 instances giving 20 batches. Instead of 10 epochs I now only use two epochs. The total run time for the entire program is set to 240 seconds, so the time for each ILS iteration is less than 6 seconds. Since the number of iterations is much lower compared to experiment 3, I set $p = 0.5$, such that each weight is seen more often. For this experiment I got a testing accuracy of 84.22 \%, which is only a slight decrease compared to experiment 3. Nothing can be concluded from such a small change, but it seems to be the case that intensifying in each solution is also quite important. \\
+
+(Not to be included in the report). For this experiment I tried to look at how the misclassifications are distributed. From this it is clear that the model has a hard time classifying especially 5, 8 and 9 correctly. This could be a motivation for trying a boosting approach. 
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    Label              & 0  & 1  & 2   & 3   & 4  & 5   & 6  & 7   & 8   & 9   \\ \hline
+    Misclassifications & 40 & 20 & 168 & 141 & 90 & 318 & 83 & 130 & 314 & 227 \\ \hline
+    \end{tabular}
+    \caption{The misclassification distribution for Experiment 3a. The entire testing set of 10,000 samples is used for testing. }
+    \label{Misclassifications_exp3a}
+\end{table}
+
+\subsection{Experiment 3b}
+Further, I tried to do the same experiment with the cross-entropy objective function. This gave a testing accuracy of 82.59 \%, and a misclassification distribution, that are somewhat more uniform:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    Label              & 0  & 1  & 2   & 3   & 4  & 5   & 6  & 7   & 8   & 9   \\ \hline
+    Misclassifications & 46 & 46 & 183 & 248 & 172 & 243 & 115 & 189 & 221 & 278 \\ \hline
+    \end{tabular}
+    \caption{The misclassification distribution for Experiment 3b. The entire testing set of 10,000 samples is used for testing. }
+    \label{Misclassifications_exp3b}
+\end{table}
+\subsection{Other Experiments}
+This is a section to just explain what other experiments that I either have in mind or have already tested but without results worth presenting - it will not be a section in the final report. An experiment I tried to run was instead of immediately returning to the best solution found so far in the ILS algorithm, I tried to let it continue for a number of iterations before returning back, where the maximum number of iterations allowed before returning were ranging from 0 to 10. The results did however not show any improvement in terms of testing accuracy, actually quite the contrary. The goal of the experiment were to see if it would be better to explore more of the search space. The experiment was run with the same settings as above, except a time limit of 120 seconds and a training sample size of 500 were used. The testing accuracies all were either 63 or 64 \%.

@@ -1,0 +1,98 @@
+\subsection{Multiple Batch Training}
+
+One of the ways I try to make sure that the models trained generalize well is to make use of more data and train the network on several batches. It is the same solution that is being trained on all of the batches, in the sense that the solution after training one batch is the starting solution to the next batch. This gives rise to a couple of problems. The first one is, how do we know what the 'best' solution is? If the solution returned is the one after the last batch, then it might be that it is heavily influenced by the last batch and as such it would have been better to use one of the solutions earlier on. Another consideration is how to make sure that the solution does not forget what it has learned from the previous batch. My attempt to solve these problems is to use an early stopping technique, where I after every $k$ batches get the validation accuracy on the validation dataset and after the complete training process I return the solution with the best validation accuracy. Of course, this introduces another parameter, $k$. Ideally one could set $k=1$ and get the validation accuracy for all the solutions, but this might be too costly as getting the validation accuracy involves evaluating the solution on a large dataset. \\
+
+\noindent One of the concerns by training a model on several batches of data is that the model overfits on the batch it is currently trained on and forgets what it learned from the previous batch. For this reason, I investigate whether a sporadic local search approach helps the model to generalize better. This works by setting a parameter $bp$, which is a parameter in the interval $[0,1]$, which is given to the Bernoulli distribution, which then returns a '1' with probability $bp$ and a 0 otherwise. Before training on a batch, each weight samples a value from this distribution, and if the value is 1, then the weight is a part of the search for that batch and otherwise the value is kept fixed for that particular batch. For each new batch, new weights are selected to be part of the search. The hope is that this helps the model to avoid getting too focused on the current batch and reduce the overfitting gap. \\
+
+\noindent The pseudocode for this algorithm is given in Algorithm \ref{multiple_batches}. In line 15 I give an additional parameter compared to the iterated improvement pseudocode in Algorithm \ref{iterated_improvement}. In practice it works a bit different, but this is just to underline that not all weights are part of the search. Notice, that this could easily be adjusted to using Algorithm \ref{ils} instead in line 15. The only difference would be that the algorithm needs to take a perturbation size as input and that each ILS phase are given a fixed time limit instead as it would continue indefinetely otherwise. 
+
+\begin{algorithm}[H]
+    \fontsize{12pt}{12pt}\selectfont
+    \caption{Pseudocode for Multiple Batch Iterated Improvement} \label{multiple_batches}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:}
+        \State \hspace{\algorithmicindent} Time limit $timeLimit$
+        \State \hspace{\algorithmicindent} Set of batches $batches$
+        \State \hspace{\algorithmicindent} Interval to early stopping $k$
+        \State \hspace{\algorithmicindent} Number of epochs $epochs$
+        \State \hspace{\algorithmicindent} Bernoulli parameter $bp$ 
+        \State $startTime \gets$ current time 
+        \State $currentSolution \gets$ random solution
+        \State $bestSolution \gets currentSolution$
+        \State $bestValidationAccuracy \gets$ ValidationAccuracy($currentSolution$)
+        \State $counter \gets 0$
+        \While{current time $-$ $startTime < timeLimit$} 
+            \For{$epoch$ in range($epochs$)}
+                \For{$batch$ in $batches$}
+                    \State $searchWeights \gets$ SelectWeights($bp$)
+                    \State $currentSolution \gets$ IteratedImprovement($currentSolution$,
+                    \Statex \hspace{\algorithmicindent} \hspace{\algorithmicindent}$timeLimit$ - (current time - $startTime)$, $searchWeights$)
+                    \If{$counter$ modulo $k$ $ = 0$}
+                        \State $ValidationAccuracy \gets$ ValidationAccuracy($currentSolution$)
+                        \If{$ValidationAccuracy > bestValidationAccuracy$}
+                            \State $bestSolution \gets currentSolution$ 
+                            \State $bestValidationAccuracy \gets ValidationAccuracy$ 
+                        \EndIf
+                    \EndIf
+                    \State $counter \gets counter + 1$
+                    \If{current time $-$ $startTime \geq timeLimit$}  % Time check within loop
+                        \State \textbf{return} $bestSolution$
+                    \EndIf
+                \EndFor
+                \State $batches \gets$ ResampleBatches 
+            \EndFor
+        \EndWhile
+        \State \textbf{return} $bestSolution$
+    \end{algorithmic}
+\end{algorithm}
+
+\noindent So far I have looked at algorithms making moves based on one batch and tried to make sure that the model does not forget what it has learnt from other batches by only looking at a subset of the weights. An alternative method is to make less moves, but making sure that the moves generalize better. One possibility for this is to sum up delta values for the moves across several batches and only after a certain number of batches, some moves are committed. This should make sure that the moves committed benefit not only a single batch of samples, but multiple batches. An important decision to make is when to make updates. The more batches seen before making updates, the more confident will the algorithm be that the moves generalize well, but it will also be slower. For this reason I add another aspect to the algorithm, such that it initially make updates based on very few batches and later on it makes updates on more batches. The parameters for this are given in line 5-7 in Algorithm \ref{multiple_batches_v2}, which shows the pseudocode for this algorithm. \\
+
+A problematic aspect of this algorithm is that the delta values are calculated under the assumption that a single move is taken, but here, to speed up the process, I take many moves at once. However, to avoid the moves interfering too much with each other I only take one move per neuron. A different problem is again the convergence problem, where I, to overcome this problem, use a time limit. For this algorithm I do not use early stopping as the use of several batches to make updates should make sure that it generalizes better compared to the version introduced earlier. 
+
+
+\begin{algorithm}[H]
+    % \footnotesize
+    \fontsize{12pt}{12pt}\selectfont
+    \caption{Pseudocode for Multiple Batch Aggregation Algorithm} \label{multiple_batches_v2}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:}
+        \State \hspace{\algorithmicindent} Time limit $timeLimit$
+        \State \hspace{\algorithmicindent} Set of batches $batches$
+        \State \hspace{\algorithmicindent} Bernoulli parameter $bp$ 
+        \State \hspace{\algorithmicindent} How many batches before making updates in the beginning $updateStart$
+        \State \hspace{\algorithmicindent} The maximum number of batches before making updates $updateEnd$
+        \State \hspace{\algorithmicindent} How often to increase the update interval $updateIncrease$
+        \State $startTime \gets$ current time 
+        \State $currentSolution \gets$ random solution
+        \State $updateInterval \gets$ $updateStart$
+        \State $counter, \; updateCounter \gets 0, \; 0$    
+        \State $searchWeights \gets$ SelectWeights($bp$)
+        \State $deltaValues$ $\gets$ $0$
+        \While{current time $-$ $startTime < timeLimit$}
+            \For{$batch$ in $batches$}
+                \State $updateCounter \gets updateCounter + 1 $
+                \State $deltaValues \gets deltaValues$ + 
+                \Statex \hspace{\algorithmicindent} \hspace{\algorithmicindent} CalculateDeltaValues($currentSolution$, $batch$, $searchWeights$)
+                \If{$updateCounter = updateInterval$}
+                    \For{each $node$ in $currentSolution$}
+                        \State $bestMove \gets$ findBestMove($deltaValues$, $node$)
+                        \If{delta value of  $bestMove > 0$}
+                            \State applyMove($currentSolution$, $bestMove$)
+                        \EndIf
+                    \EndFor
+                    \State $updateCounter \gets 0$ 
+                    \State $deltaValues$ $\gets$ $0$
+                    \If{$counter$ modulo $updateIncrease$ $ = 0$}
+                        \State $updateInterval \gets updateInterval + 1$ 
+                    \EndIf
+                \EndIf
+                \State $counter \gets counter + 1$
+            \EndFor
+            \State $batches \gets$ ResampleBatches 
+        \EndWhile 
+        \State \textbf{return} $bestSolution$
+    \end{algorithmic}
+\end{algorithm}
+
+

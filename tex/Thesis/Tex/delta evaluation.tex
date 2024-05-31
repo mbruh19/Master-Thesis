@@ -1,0 +1,183 @@
+\subsection{Delta Evaluation}
+A very important part of a LS algorithm is how to select moves to commit to a solution. Often this is done by selecting a possible move, evaluating that move and get its delta value, which is a value telling how the objective function value is affected by that move. Afterwards a threshold value is used to determine if that move should be accepted or not. For maximization problems, the threshold value could simply be that the delta value should be above 0 in order for the move to be accepted. A critical function in a LS algorithm is thus the function that evaluates a move, as this is something that is done many times throughout the solution search. I found it to be highly inefficient to work with a function that evaluates only a single move. As the solution improves, more and more moves need to be tried before finding an improvement and a function that only evaluate a single move is too slow for this. Also, I found that by evaluating several moves, in a structured way, I found several tricks that speed up the evaluation. \\
+
+The way I evaluate moves is by selecting a neuron in the neural network with weights going into it, so I do not select neurons from the input layer. For this neuron I evaluate the possible moves for the weights going into it. This is done simultaneously, but still independently in the way that I am testing what would happen if a single weight changes value, not what would happen if all of them change values at once. After this evaluation, a sequence of moves will be returned, each with their own delta value, that I can then use to determine what move to take. I will now introduce the most important aspects of this and will with an example show how it works. 
+
+\subsubsection{Critical Samples}
+Recall the binary activation function defined in (\ref{act}). The input to that function is the preactivation values, $s_v^{il}$ and in a LS context where only one-exchange moves are considered, there are values of these preactivation values such that the output of (\ref{act}) is unchanged regardless which of the weights going into neuron $v$ at layer $l$ change values. The weights can only take on values -1, 1 (0 as well for a TNN), so they can only change their value by either -2 or 2 in a BNN where -1 and 1 are also possibilities in a TNN. Thus, if we denote the maximum output value, or activation value, (in absolute value) from the previous layer by $u^{l-1}_{\max}$, then we can define the set of critical samples for a neuron, which are those samples that can change activation value by making a single move for one the weights going into that neuron, by:
+\begin{align}
+    \label{critical} \text{critical }^l_ v = \{ i \in \{1, \ldots, T\}: s_v^{il} \geq -2 \cdot u^{l-1}_{\max} \wedge s_v^{il} < 2 \cdot u^{l-1}_{\max} \}
+\end{align}
+I use a general notation to both describe the case for the first hidden layer, where the output from the previous layer are dependent on the input, but from the second hidden layer, it is possible to skip the $u^{l-1}_{\max}$ term, as this is equal to 1 as a result of the binary activation function. The purpose of these 'critical' samples, is that it greatly reduces the number of instances for which the delta evaluation need to be evaluated for. This trick is only used for the hidden layers, as the same does not apply for the output layer. 
+
+\subsubsection{Forward Propagation}
+The next trick that is useful when evaluating moves for a neuron is that it can be used to reduce the number of forward propagations. This logic applies both for a hidden layer and the output layer. It is a bit more complicated for the output layer in the TNN case, but nevertheless it is very useful. After having found the critical samples for a neuron (in a hidden layer), we need to evaluate what would happen if a move was applied to the weights going into the neuron. A naive way to do this would be to apply a forward propagation for all of the weights on the critical samples to see what would happen with the objective function value. But the binary activation function gives a way to do this more efficiently. The only way that something changes for a specific instance is if the activation of that instance changes, in which case we know that it changes it value by -2 or 2, dependent on the value of it before. Thus, we can simulate what would happen if the activations change for all the critical samples and find their 'delta changes' by doing a single forward propagation. Afterwards we can, for each weight we want to calculate the effect of a move for, find out if making the move would change the activations and then the 'delta changes' can be looked up instead of calculating it again. \\
+
+\noindent For the output layer, a similar logic applies. Again a neuron is selected, but this time the critical set is not relevant, as the binary activation function is not used here. But again, for a BNN exactly one of two things happen (assuming the presence of at least one hidden layer): either the preactivation value increases by 2 or it decreases by 2. This comes from the fact that the output from the previous layer is either -1 or 1 and the value of the weight changes by either -2 or 2. Thus, it is again possible to find the 'delta changes' for the samples by simulating what would happen if their values increase by 2 and what would happen if they decrease by 2. Afterwards, for each single weight it can quickly be determined which of the cases a sample is in and the effect can be looked up in the 'delta changes'-tables. This greatly reduces the number of times the function calculating the objective function value needs to be called. For a TNN, it is almost the same, except 4 'delta changes'-tables are needed as the values can also increase and decrease by 1 in this case. 
+
+\subsubsection{Example of Delta Evaluation}
+To illustrate how the mechanisms described above works, I have constructed a BNN with the following structure $[784, 4, 4, 4, 10]$. I am training it on a balanced training set of 10 instances from the MNIST dataset. Initially I initialize a solution by randomly assigning values to all the weights and I am now looking for what move to make in order to improve the current solution. Suppose now that I look at the fourth neuron in the second hidden layer. The preactivations are given in the vector:
+
+\begin{align*}
+    S_4^2 = 
+    \begin{bmatrix}
+        0 & 4 & 4 & 2 & 2 & 2 & 4 & 2 & -2 & 2
+    \end{bmatrix}
+\end{align*}
+Each element corresponds to a different training sample. Since we are in the second hidden layer, $u^1_{\max} = 1$ and thus $\text{critical }_4 ^2 = \{1, 9\}$, as it is only the instances with 0 and -2 as preactivation values that can change activation. Thus, for the remainder of the delta evaluation process for this neuron, it is only necessary to look at these two instances. The first thing needed to do is to simulate what would happen if their activations change. Thus, I start by calculating the effect of this by propagathing through the network. During the process, I always try to do as little work as possible meaning that whenever I can benefit from using the values already stored I do so. The preactivation values for the next layer for these two instances is currently given by:
+
+\begin{align*}
+    S^3 = 
+    \begin{bmatrix}
+        -2 & 0 & -2 & 0 \\
+        -2 & 0 & -2 & 0 
+    \end{bmatrix}
+\end{align*}
+where each row corresponds to an instance and each column to a neuron at the next layer. The weight vector going into the next layer from the fourth neuron in the second layer is given by:
+\begin{align*}
+    W = 
+    \begin{bmatrix}
+        -1 & 1 & 1 & 1
+    \end{bmatrix}
+\end{align*}
+Looking at the critical instances it is easy to recognize, that if they changed sign and thus activation, then the first would decrease from 1 to -1 and the second would increase from -1 to 1. Thus, we have:
+\begin{align*}
+    \hat{S}^3 = S^3 + 
+    \begin{bmatrix}
+        -2 \\
+        2
+    \end{bmatrix}
+    \circ 
+    \begin{bmatrix}
+        -1 & 1 & 1 & 1 
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+        0 & -2 & -4 & -2 \\
+        -4 & 2 & 0 & 2 
+    \end{bmatrix}
+\end{align*}
+Here $\circ$ is elementwise mulplication. \\
+\noindent Until now it has been possible to calculate what is happening by looking at the preactivation values stored in memory and updating them. This is efficiently to do for the neuron that is being evaluated and for the next layer, but afterwards it makes more sense to forget what is in memory and instead finish the forward propagation with the temporary matrices. To finish the forward propagation one need to apply the activation function, (\ref{act}), to $\hat{S}^3$, yielding the result: 
+\begin{align*}
+    \hat{U}^3 = 
+    \begin{bmatrix}
+        1 & -1 & -1 & -1 \\
+        -1 & 1 & 1 & 1 
+    \end{bmatrix}
+\end{align*}
+The last step is to multiply with the last weight matrix to obtain the preactivation values for the last layer. Here I will only give the result:
+\begin{align*}
+    \hat{S^4} = \hat{U^3}W^4 = 
+    \begin{bmatrix}
+        2 & 0 & 0 & -4 & 4 & 2 & -2 & 2 & 0 & 2 \\
+        -2 & 0 & 0 & 4 & -4 & -2 & 2 & -2 & 0 & -2
+    \end{bmatrix}
+\end{align*}
+Compare this to the current preactivation values, which is determined after the random initialization:
+\begin{align*}
+    S^4 = 
+    \begin{bmatrix}
+        -4 & -2 & 2 & 2 & -2 & 0 & 0 & 0 & -2 & -4 \\
+        -4 & -2 & 2 & 2 & -2 & 0 & 0 & 0 & -2 & -4
+    \end{bmatrix}
+\end{align*}
+Since the correct labels for these two instances are 4 and 9 respectively (using 0-indexing), the objective vector, using the integer objective function, is initially given by:
+\begin{align*}
+    O = 
+    \begin{bmatrix}
+        -2 - 2 \\
+        -2 - 4 
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+        -4 \\
+        -6 
+    \end{bmatrix}
+\end{align*}
+whereas using $\hat{S}^4$, the result is:
+\begin{align*}
+    \hat{O} = 
+    \begin{bmatrix}
+        4 - 2 \\
+        -4 -2 
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+        2 \\
+        -6 
+    \end{bmatrix}
+\end{align*}
+This gives a vector of delta changes:
+\begin{align*}
+    D = \hat{O} - O = 
+    \begin{bmatrix}
+        2 - (-4) \\
+        -6 - (-6) 
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+        6 \\ 
+        0 
+    \end{bmatrix}
+\end{align*}
+This means that we have found out that if the activations change for the two critical instances, then this has a positive effect for one of them and zero effect for the other. The last thing we need to do is to find out which, if any, of the four weights going into the neuron can make the activations change. The current weights going into this neuron has the values: 
+\begin{align*}
+    W_4^2 = 
+    \begin{bmatrix}
+        -1 & 1 & 1 & 1
+    \end{bmatrix}
+\end{align*}
+and the output of the previous layer for the two critical instances are:
+\begin{align*}
+    U^1 = 
+    \begin{bmatrix}
+        1 & -1 & 1 & 1 \\
+        1 & -1 & -1 & 1
+    \end{bmatrix}
+\end{align*}
+What I then do is that I create four copies of the preactivation values for the critical instances, one for each weight going into the neuron. Afterwards I simulate what would happen if the weights are 'flipped', take the activations of these simulated preactivation values and compare them to the current activations. This gives me a matrix where each row represents an instance and the column represents a weight. The elements indicate whether the activation has changed or not, meaning that to get the effect of a weight we can columnwise take the inner product between the column and the delta changes vector, $D$, found earlier. I start by finding the simulated preactivation values:
+\begin{align*}
+    \hat{S}^2_4 = 
+    \begin{bmatrix}
+        0 & 0 & 0 & 0 \\
+        -2 & -2 & -2 & -2
+    \end{bmatrix}
+    + 
+    \begin{bmatrix}
+        1 & -1 & 1 & 1 \\
+        1 & -1 & -1 & 1
+    \end{bmatrix}
+    \circ 
+    \begin{bmatrix}
+        2 & -2 & -2 & -2
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        2 & 2 & -2 & -2 \\
+        0 & 0 & 0 & -4
+    \end{bmatrix}
+\end{align*}
+I then need to find out where there is a change in activation values compared to the current solution. Clearly, since the current preactivation value for the first instance is 0, this activation is currently 1, and for the second it is -1 as the preactivation value is -2. Thus, it gives the following 'changes' matrix, where 1 indicate that the activation has changed and 0 indicate that it has not. 
+\begin{align*}
+    \text{changes} = 
+    \begin{bmatrix}
+        0 & 0 & 1 & 1 \\
+        1 & 1 & 1 & 0
+    \end{bmatrix}
+\end{align*}
+As an example this shows that for the weight indexed by the third column, flipping that value from 1 to -1, will change the activation of both the critical instances. The last remaining thing to do is to, columnwise found the effect of flipping each weight. This gives the following delta values:
+\begin{align*}
+    DW = 
+    \begin{bmatrix}
+        0 \cdot 0 + 1 \cdot 0 & 0 \cdot 0 + 1 \cdot 0 & 1 \cdot 6 + 1 \cdot 0 & 1 \cdot 6 + 0 \cdot 0
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+        0 & 0 & 6 & 6
+    \end{bmatrix}
+\end{align*}
+Thus, an improvement of 6 in terms of the integer objective function can be found by flipping the third or fourth weight going into this neuron. 
+
+
+

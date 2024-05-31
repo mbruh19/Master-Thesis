@@ -1,0 +1,120 @@
+\section{Local Search Model for Binary and Ternary Neural Networks}
+
+A local search (LS) algorithm starts from a solution, which may be a random assignment of values to the decision variables. From here it moves from the current solution to a neighboring solution in the hope of improving a function $f$. A solution is denoted by $s$, and the set of neighboring solutions of $s$, $N(s)$, is called the neighborhood of $s$. In the following I will define the LS model I have used to train BNNs and TNNs and explain how local search is used. 
+
+\subsection{Notation}
+A BNN is a network where the weights and activations are restricted to $\pm 1$, whereas allowing the weights to be equal to 0 gives a Ternary Neural Network (TNN). This model applies for fully connected NNs, where the input comes from the data. I denote by $N = \{N_0, N_1, \ldots, N_L\}$ the set of layers in the network where $N_0$ is the input layer and $N_L$ is the last layer. For each layer, the set of neurons are denoted by $N_l = \{1, 2, \ldots, n_l\}$ such that the width of layer $l$ is $n_l$. The decision variables are the weights between each layer. The weight between neuron $u$ in layer $N_{l-1}$ and neuron $v$ in layer $N_l$ is denoted by $w_{uv}^l$. For the hidden layers, the activation function used to binarize the output is given by: 
+
+\begin{align}
+    \label{act} p(x) = 2 \cdot \mathbb{I} (x \geq 0) - 1
+\end{align}
+
+\noindent The training set can be written as $TR = \{ (\mathbf{x}^1, y^1), \ldots , (\mathbf{x}^T, y^T) \}$ such that $\mathbf{x}^i \in \mathbb{R}^{n_0}$ and $y^i$ is the label of the instance $i$ for every $i\in \{1, 2, \ldots, T\}$. It is beneficial to keep track of the preactivation values for all training instances for all the neurons in the layers $\{N_1, \ldots, N_L\}$. I use $s_v^{il}$ to denote the preactivation for instance $i$ at neuron $v$ in layer $l$. Similarly, for all the hidden layers $\{N_1, \ldots, N_{l-1}\}$, the output of the activation is denoted by $u_v^{il} = p(s_v ^{il})$. 
+
+\noindent All of the above can also be written in terms of matrices and vectors. The input matrix is then denoted by $X \in \mathbb{R}^{T \times n_0}$ such that every row corresponds to the input of a specific instance and $Y$ is a vector with the labels. Then the mathematical model for a BNN can be written as:
+
+\begin{align}
+    \label{obj} \max \;\quad  & f(S^L, Y) \\
+    \label{c1} \mbox{s.t.}\quad  & U^0 = X \\
+    \label{c2} & S^l = U^{l-1}W_l \quad \quad \quad \quad \quad \forall l \in \{1, \ldots, L\} \\
+    \label{c3} & U^l = p(S^l) \quad \quad \quad \quad \quad \quad \forall l \in \{1, \ldots, L- 1\} \\
+    \label{c4} & W^l \in \{-1, 1\}^{n_{l-1} \times n_l} \quad \quad \forall l \in \{1, \ldots, L\} \\
+    \label{c5} & X \in \mathbb{R}^{T \times n_0}
+\end{align}
+
+\noindent where (\ref{act}) is applied elementwise. Notice that I maximize a function, which is in contrast to standard ML, where the crossentropy loss is often minimized. I overcome this by multiplying by $-1$, whenever I use a loss function that is tradtionally minimized. If the input is real-valued, then $S_1$ is also real-valued but because of the binary activations and weights, $S^l$ is integer-valued for $l\in \{2, \ldots, L\}$. For a TNN, 0 is included to be an option for the $W$-matrices. Occassionally I will also use the notation $S^l_v$, which is a vector of the preactivation values in layer $l$, but only for neuron $v$. 
+
+\subsection{Solution Generation, Neighborhood and Move}
+
+As earlier mentioned, the decision variables are the weights between the layers. The preactivations and activations are determined by the input data and the weights. The number of variables in the model are thus given by $k = n_0\cdot n_1 + n_1 \cdot n_2 + \ldots + n_{L-1} \cdot n_L$. This means that the number of possible solutions for a TNN is $3^k$ and for a BNN it is $2^k$. To generate a solution, I use a uniform, random assignment of the allowed values to the variables. I use a 1-exchange neighborhood such that the neighbors to a solution $s$ are the solutions $s'$ in which it is only a single weight that has another value. This gives a neighborhood of size $k$ for a BNN and $2k$ for a TNN. A move is thus defined as the operation that take a solution $s$ to a new solution $s'$ by changing the value of exactly one weight. For a BNN this is simply a 'flip' from -1 to 1 or from 1 to -1, whereas for a TNN there is always two new values that a weight can take. \\
+
+Often the number of weights in a NN are very large, and even though I only work with relative small NNs the number of weights quickly grows large. As a result, I found it to be inefficient to implement a function that tests the effect of a single move. For this reason I developed another approach, in which I evaluate several moves at once. I will elaborate on this later with an example. 
+
+\subsection{Objective Functions}
+As discussed earlier, when training NNs surrogate loss functions are often used, because the performance measure one is often interested in is non-differentiable, non-continuous and it might not be flexible enough. From now on I will denote the function to be maximized as an objective function, and whenever this corresponds to a loss function, which are normally minimized, I simply multiply the objective function value by -1 to get a maximization problem. In ML the objective function is used to compute gradients, that can be used to update the parameters in a gradient descent algorithm. In a LS context, an objective function does not necessarily have to be differentiable. In my implementation I support three different type of objective functions.
+
+\subsubsection{Cross Entropy Objective Function}
+I have already introduced the cross entropy function earlier. As I have implemented everything as a maximization problem, the objective function becomes:
+
+\begin{align}
+    \label{cs} \max \sum_{i=1}^m \log P(\mathbf{y}^{(i)} \mid \mathbf{x}^{(i)})
+\end{align}
+where $m$ is the number of samples in the batch, $\mathbf{y}^{(i)}$ is the label of sample $i$ with input data $\mathbf{x}^{(i)}$. Since the probabilities are always between 0 and 1, and the logarithm takes each probability and map them to a value between $(-\infty, 0)$, the range of this objective function is $(-\infty, 0)$. 
+
+\subsubsection{Integer Max Margin Objectice Function}
+The cross entropy objective function work with real-valued numbers. It might be beneficial to work with an integer-valued objective function for memory effiency reasons. As such I propose what I call the Integer Max Margin objective function. It builds on exactly the same intuition as the others, which for the multiclassification problem is to maximize the preactivation value for the neuron corresponding to the correct label. As earlier let $i$ denote a training instance and let $y^i$ be the true label, and let $\hat{y}^i$ be the predicted value defined as:
+
+\begin{align}
+    \label{y_hat} \hat{y}^i = \max _{v\in \{1, \ldots, n_L \} } s_v^{iL}
+\end{align}
+
+\noindent The goal is to stay within integers and at the same time predict confidently. One way to do this is to maximize the distance between the true label and the label with highest preactivation value, corresponding to highest probability, that are not the true label. So if $\hat{y}^i \neq y^i$ then $s_{\hat{y}^i}^{iL} > s_{y^i}^{iL}$ and the contribution to the objective function in this case will be $s^{iL}_{y^i} - s_{\hat{y}^i}^{iL}$ which is negative. The first goal would then be to minimize the gap between the wrongly prediction and the true label. On the other hand, if $\hat{y}^i = y^i$, then the model predicts correctly and in this case the goal is to maximize the distance to the label that come closest. This term can be written as: $s_{y^i}^{iL} - \max_{v \in \{1, \ldots, n_L\} \setminus y^i } s_v ^{iL}$. This can be summarized into a single line, so that the objective function, for a single instance, is given by: 
+
+\begin{align}
+    \label{integer_objective} f(\mathbf{x}^i, y^i) = s_{y ^i} ^{iL} - \max_{v \in \{1, \ldots, n_L\} \setminus y^i } s_v ^{iL}
+\end{align}
+As a result, the objective function for all $m$ samples in a batch becomes:
+\begin{align}
+    \label{int} \max \sum_{i=1} ^m \big[ s_{y ^i} ^{iL} - \max_{v \in \{1, \ldots, n_L\} \setminus y^i } s_v ^{iL}  \big]
+\end{align}
+
+The range of this objective function is theoretically given by $[-m \cdot n_{L-1}, m \cdot n_{L-1}]$. 
+
+\noindent For the binary classification problem, this does not work as there is only one neuron at the final layer. The bounds for the preactivation values are determined by the number of neurons in the second last layer, $n_{L-1}$, such that the bounds are given by $[-n_{L-1}, n_{L-1}]$. For binary classification problems, the labels can also be encoded as -1 and 1. For the samples labeled 1, the goal is to get the preactivation values as close to $n_{L-1}$ as possible, or equivalently, maximize the distance to $-n_{L-1}$. The goal is opposite for the samples labeled -1, here the goal is to get the preactivation values as close to $-n_{L-1}$ as possible. For a single instance, this can be summarized into:
+\begin{align}
+    \label{integer_objective_binary} f(\mathbf{x}, y) = y\cdot s^L + n_{L-1}
+\end{align}
+To see this, take the case of $y=1$, then we want to maximize $s^L - (-n_{L-1})$ which is equivalent to (\ref{integer_objective_binary}). On the other hand, if $y = -1$, then we want to maximize the distance from $s^L$ to $n_{L-1}$, which is the same as $n_{L-1} - s^L$. Again, when multiplying $s^L$ with $y$ this is equivalent to (\ref{integer_objective_binary}). For all $m$ samples, the objective function is thus given by:
+\begin{align}
+    \label{int_binary} \max \sum_{i=1} ^m \big[ y^i \cdot S^{iL} + n_{L-1} \big]
+\end{align}
+
+\subsubsection{Comparison Between Cross Entropy and Integer Objective Function}
+To illustrate the difference between this objective function and the crossentropy, suppose we are in a setting with 5 different classes, the correct label is the first label and the preactivation values for the 5 neurons in the output layer is given by $[4, 2, -2, -2, -2]$, such that the contribution to the crossentropy objective function is $-0.133456$ (after multiplying by -1). The contribution to the integer objective function is 2. Clearly, we are most interested in decreasing the preactivation value for the neuron with value 2, as this would mean a more confident (and correct) prediction of our instance. However, suppose we find a move that decreases the preactivation value of the third neuron from -2 to -4. This gives a new contribution from the crossentropy function equal to $-0.131558$, which is only a very small improvement. On the other hand, this is not an improvement for the integer objective function, where an improvement only is found if either the preactivation value of the first neuron increases or the preactivation value for the second neuron decreases. 
+
+\subsubsection{Brier Score}
+So far I have introduced two objective functions, whose range is quite large. As I, later on, want to test whether it is possible to add a regularization parameter to the objective function to minimize the number of connections in a TNN, it is desirable to also have an objective function, which have a more constrained range. The Brier score, which measures the accuracy of probabilistic predictions, gives this possibility. For binary classification using 0-1 encoding of the labels, the Brier score is defined as: 
+
+\begin{align}
+    BS = \frac{1}{m} \sum_{i = 1} ^m (p(y^i) - y^i) ^2 
+\end{align}
+where $p(y^i)$ is the probability that $y^i$ is 1 and $y^i$ is the actual outcome. This corresponds to the mean squared error, and it gives a value between 0 and 1, where 0 is the best score achievable. I formulate it without taking the mean and convert it to a maximization problem by multiplying with $-1$, so the objective function for binary classification becomes:
+\begin{align}
+    \label{BS_binary} \max \sum_{i=1}^m - (p(y^i) - y^i) ^2 
+\end{align}
+The range of this objective function value is $(-m, 0)$. \\
+\noindent For the multiclassification task, the original BS score is defined by: 
+\begin{align}
+    BS = \frac{1} {m} \sum_{i=1} ^m \sum_{t=1} ^C (p(y^{ti}) - y^{ti})
+\end{align}
+where $C$ is the number of classes, $p(y^{ti})$ is the predicted probability for class $t$ for instance $i$. $y^{ti}$ is 1 of instance $i$ belongs to the $t$-th class and zero otherwise. Here the range is double, from zero to two. In my implementation I use:
+\begin{align}
+    \label{BS} \max \sum_{i=1}^m \sum_{t=1} ^C - (p(y^{ti}) - y^{ti})
+\end{align}
+The range of this objective function is thus $(-2m, 0)$. 
+\subsubsection{Minimizing the number of connections}
+In a TNN it is possible to add a second term to the objective function measuring how many active connections are in the model, i.e. how many weights are not zero. The idea is, that the model should be as simple as possible to avoid overfitting. In this context simple means having fewer active connections. Thus, the goal of the second objective term is to minimize the number of connections. As I am working with maximization, the second objective term would look like this:
+
+\begin{align}
+    \label{min_connections}  - \alpha \sum_{l\in{1, \ldots, L}} \sum_{u \in N_{l-1}} \sum_{v \in N_l}  \text{abs}(w^l_{uv})
+\end{align}
+
+\noindent where $\alpha$ is a weight used to penalize the number of connections. The term is negative as it is put into an maximization problem. The choice of $\alpha$ depends on the objective function it is used in, as the weighting of this second term should depend on what values the first term is taking. As such the Brier score objective function is an ideal choice to use in combination with this term, as the value of that is constrained. As an example suppose the number of training samples is given by $T = 1000$ and the number of weights in the neural network is 10000. Assume it is a multiclassification task. Then the objective function value for the Brier score is in the interval $(-2000, 0)$ and the second term would be in the interval $[-10000, 0]$, with $\alpha = 1$ that is. The total objective function value is as a result in the interval $(-12000, 0)$. A too high value of $\alpha$ would simply put all weight values to zero, but at the cost of predicting correctly. But a small value of $\alpha$, say $0.001$ would make the second term to be in the interval $[-10, 0]$, and it would no longer be beneficial to set all weights equal to zero at the cost of predicting correctly. 
+
+\input{Tex/delta evaluation}
+
+\input{Tex/solution improvement}
+
+\input{Tex/single_or_batch_training}
+
+\input{Tex/code organization}
+
+% Here I plan to include the following:
+
+% \begin{itemize}
+%     \item Intro to Local Search
+%     \item Neighborhood
+%     \item Local Search Algorithms - iterative improvement, first improvement, best improvement, random improvement
+%     \item Local Search Metaheuristics - iterated local search 
+
+% \end{itemize}

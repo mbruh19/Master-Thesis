@@ -1,0 +1,31 @@
+\begin{center}
+% latex table generated in R 4.2.2 by xtable 1.8-4 package
+% Wed May 15 23:48:42 2024
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|}
+  \hline
+ObjectiveFunction & ValFreq & Mean & SD & MeanRuntime & SDRuntime & BestEpoch \\ 
+  \hline
+cross-entropy &  10 & 0.8248 & 0.0071 & 1213.31 & 30.8919 & 5.40 \\ 
+   \hline
+cross-entropy &  40 & 0.8193 & 0.0019 & 1164.67 & 71.7222 & 5.20 \\ 
+   \hline
+integer &  10 & 0.8553 & 0.0032 & 609.40 & 17.7749 & 5.80 \\ 
+   \hline
+integer &  40 & 0.8543 & 0.0029 & 555.97 & 22.8945 & 5.60 \\ 
+   \hline
+max probability &  10 & 0.8379 & 0.0066 & 1450.51 & 32.4451 & 3.40 \\ 
+   \hline
+max probability &  40 & 0.8377 & 0.0047 & 1432.05 & 50.4785 & 6.80 \\ 
+   \hline
+\end{tabular}
+\caption{Summary statistics for the Multiple Batches Iterated Improvement algorithm.
+          A BNN is trained with a single hidden layer with
+          64 neurons. The batch size is 1000, and the ValFreq column indicates how often the validation accuracy
+          is calculated. The BestEpoch column indicates for which epoch, on average, the best validation accuracy
+          was found.} 
+\label{Early stopping}
+\end{table}
+
+\end{center}

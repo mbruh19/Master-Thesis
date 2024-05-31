@@ -1,0 +1,93 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[danish,english]{babel}
+\usepackage{graphicx}
+\usepackage[a4paper,margin=2.7cm]{geometry}
+\linespread{1.5}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{hyperref}
+
+\usepackage{float}
+
+\usepackage{natbib}
+
+%TOC new
+\usepackage{titletoc}
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\setcitestyle{authoryear, open={((},close={)}}
+
+
+\usepackage{verbatim}
+
+\usepackage{ulem}
+
+% Used for plotting figures side by side. 
+\usepackage{caption}
+\usepackage{subcaption}
+
+
+\newcommand{\detailtexcount}[1]{%
+  \immediate\write18{texcount -merge -sum -q #1.tex output.bbl > #1.wcdetail }%
+  \verbatiminput{#1.wcdetail}%
+}
+
+\newcommand{\quickwordcount}[1]{%
+  \immediate\write18{texcount -1 -sum -merge -q #1.tex output.bbl > #1-words.sum }%
+  \input{#1-words.sum} words%
+}
+
+\newcommand{\quickcharcount}[1]{%
+  \immediate\write18{texcount -1 -sum -merge -char -q #1.tex output.bbl > #1-chars.sum }%
+  \input{#1-chars.sum} characters (not including spaces)%
+}
+
+\begin{document}
+
+\quickcharcount{main} 
+\quickwordcount{main}
+
+\pagenumbering{gobble}
+\input{Frontpage.tex}
+\newpage 
+\input{Declaration.tex}
+\newpage
+
+% \bibliographystyle{plainnat}
+\bibliographystyle{apalike}
+
+
+\input{Tex/abstract}
+
+\startlist{toc}
+\printlist{toc}{}{\section*{Table of Contents}}
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{Tex/problem description}
+\newpage
+\input{Tex/introduction}
+\newpage
+\input{Tex/literature}
+\newpage
+\input{Tex/machine learning theory}
+\newpage
+\input{Tex/local search theory}
+\newpage
+\input{Tex/analysis}
+\newpage
+\input{Tex/conclusion}
+\newpage
+\bibliography{refs}
+
+\end{document}

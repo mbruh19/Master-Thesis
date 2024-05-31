@@ -1,0 +1,29 @@
+\begin{center}
+% latex table generated in R 4.2.2 by xtable 1.8-4 package
+% Sun May 26 21:59:08 2024
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+  \hline
+Objective function & Hidden layers & 16 & 128 \\ 
+  \hline
+brier & One & 0.7149 & 0.5096 \\ 
+   \hline
+cross-entropy & One & 0.7423 & 0.8185 \\ 
+   \hline
+integer & One & 0.7413 & 0.8003 \\ 
+   \hline
+brier & Two & 0.5125 & 0.3795 \\ 
+   \hline
+cross-entropy & Two & 0.4844 & 0.6614 \\ 
+   \hline
+integer & Two & 0.5340 & 0.7284 \\ 
+   \hline
+\end{tabular}
+\caption{The mean test accuracies on MNIST for different network structures. The results are obtained by training a BNN
+            on a single batch with 2000 samples using the ILS algorithm with a time limit of 300 seconds.
+            The columns indicates the width of the hidden layers} 
+\label{SBT_DNS}
+\end{table}
+
+\end{center}
