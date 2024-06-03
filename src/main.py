@@ -16,21 +16,21 @@ import sys
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-ct', '--classification_type', type = str, default = 'binary', help = 'Whether it is multiclassification or binary')
+    parser.add_argument('-ct', '--classification_type', type = str, default = 'multi', help = 'Whether it is multiclassification or binary')
 
-    parser.add_argument('-nt', '--network_type', type = str, default = 'TNN', help = 'Whether it is a BNN or TNN')
+    parser.add_argument('-nt', '--network_type', type = str, default = 'BNN', help = 'Whether it is a BNN or TNN')
 
-    parser.add_argument('-ns', '--network_structure', nargs = '+', type = int, default = [104, 16, 1], help = 'The architecture of the feedforward neural network')
+    parser.add_argument('-ns', '--network_structure', nargs = '+', type = int, default = [784, 128, 128, 10], help = 'The architecture of the feedforward neural network')
 
-    parser.add_argument('-ds', '--dataset', type = str, default = 'Adult', help = 'The dataset to solve the classification problem for.')
+    parser.add_argument('-ds', '--dataset', type = str, default = 'MNIST', help = 'The dataset to solve the classification problem for.')
 
     parser.add_argument('-vp', '--validation_percentage', default = 0, help = 'The percentage of training set used for validation set')
 
-    parser.add_argument('-bs', '--batch_size', type = int, default = 800, help = 'The number of samples in each batch drawn from the training set')
+    parser.add_argument('-bs', '--batch_size', type = int, default = 1000, help = 'The number of samples in each batch drawn from the training set')
 
-    parser.add_argument('-vs', '--validation_size', type = int, default = 6162, help = 'The number of samples in the validation set')
+    parser.add_argument('-vs', '--validation_size', type = int, default = 0, help = 'The number of samples in the validation set')
 
-    parser.add_argument('-ts', '--test_batch_size', type = int, default = 15060, help = 'The number of samples in the test set')
+    parser.add_argument('-ts', '--test_batch_size', type = int, default = 10000, help = 'The number of samples in the test set')
 
     parser.add_argument('-st', '--sample_type', type = str, default = 'random', help = 'Whether to sample balanced or randomly')
 
@@ -38,13 +38,13 @@ if __name__ == '__main__':
 
     parser.add_argument('-p', '--p_parameter', type = int, default = 2, help = 'If objective type is pairwise, then this need to be set.')
 
-    parser.add_argument('-al', '--algorithm', type = str, default = 'batch_training_ils', help = 'The algorithm to use')
+    parser.add_argument('-al', '--algorithm', type = str, default = 'aggregation_algorithm', help = 'The algorithm to use')
 
     parser.add_argument('-so', '--solver', type = str, default = 'ils', help = 'Either "iterated_improvement", "ils" or ')
 
     parser.add_argument('-se', '--seed', type = int, default = 42, help = 'The seed for the experiment')
 
-    parser.add_argument('-tl', '--time_limit', type = int, default = 60, help = 'The time limit for data loading and training, but not testing. In seconds.')
+    parser.add_argument('-tl', '--time_limit', type = int, default = 600, help = 'The time limit for data loading and training, but not testing. In seconds.')
 
     parser.add_argument('-l', '--logging', type = bool, default = True, help = 'Whether logging is activated')
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     ### ILS arguments
 
-    parser.add_argument('-ps', '--perturbation_size', default = 30, help = 'How many variables to include in the perturbation')
+    parser.add_argument('-ps', '--perturbation_size', default = 2000, help = 'How many variables to include in the perturbation')
 
     ### Iterated improvement arguments 
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-us', '--update_interval_start', type = int, default = 1)
 
-    parser.add_argument('-ue', '--update_interval_end', type = int, default = 20)
+    parser.add_argument('-ue', '--update_interval_end', type = int, default = 5)
 
     parser.add_argument('-ui', '--update_interval_increase', type = int, default = 10)
 
@@ -152,9 +152,9 @@ if __name__ == '__main__':
         elif settings.algorithm =='single_batch':
             s = single_batch(instance, settings, settings.time_limit - (perf_counter() - start))
         elif settings.algorithm =='aggregation_algorithm':
-            s = batch_training_fine_tuning(instance, settings, settings.time_limit - (perf_counter() - start))
+            s = aggregation_algorithm(instance, settings, settings.time_limit - (perf_counter() - start))
         elif settings.algorithm =='batch_training_ils':
-            s = batch_training_ils(instance, settings, settings.time_limit - (perf_counter() - start) )
+            s = aggregation_algorithm_ils(instance, settings, settings.time_limit - (perf_counter() - start) )
         
         if weights == None:
             weights = {}
@@ -168,7 +168,9 @@ if __name__ == '__main__':
         elif settings.algorithm =='batch_training_ils':
             s = batch_training_ils(instance, settings, settings.time_limit - (perf_counter() - start) )
         elif settings.algorithm =='aggregation_algorithm':
-            s = batch_training_fine_tuning(instance, settings, settings.time_limit - (perf_counter() - start))
+            s = aggregation_algorithm(instance, settings, settings.time_limit - (perf_counter() - start))
+        elif settings.algorithm =='aggregation_algorithm_ils':
+            s = aggregation_algorithm_ils(instance, settings, settings.time_limit - (perf_counter() - start))
     else:
         raise ValueError(f'There is no support to solve {settings.classification_type}. Must be either "binary" or "multi"')
 

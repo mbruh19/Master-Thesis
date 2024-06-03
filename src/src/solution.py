@@ -33,7 +33,7 @@ class Solution:
             self.logging['iterated_improvement_moves'] = []
             self.logging['moves_per_batch'] = [0]
             self.logging['total_moves']=0
-            if settings.algorithm == 'batch_training_fine_tuning':
+            if settings.algorithm == 'aggregation_algorithm' or settings.algorithm == 'aggregation_algorithm_ils':
                 self.logging['moves_per_update']=[]
                 self.logging['train_accuracies']=[]
                 self.logging['train_accuracies_before_update']=[]
