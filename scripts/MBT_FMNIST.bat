@@ -27,7 +27,7 @@ set nss[3]=784 128 128 10
 
 set "als[0]=batch_training"
 set "als[1]=batch_training_ils"
-set "als[2]=batch_training_fine_tuning"
+set "als[2]=aggregation_algorithm"
 
 set batchsize=1000
 
