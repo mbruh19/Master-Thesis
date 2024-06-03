@@ -10,10 +10,7 @@ from time import perf_counter
 import torch 
 import random
 
-import sys 
-# @profile 
-def batch_training_fine_tuning(instance, settings, time_left):
-    print("Was here")
+def aggregation_algorithm(instance, settings, time_left):
     e = Evaluation(instance)
     threshold = settings.threshold
     p = settings.bernoulli_parameter
@@ -41,7 +38,7 @@ def batch_training_fine_tuning(instance, settings, time_left):
     
     while time_left - (perf_counter() - start) > 0 :
         # print(s.obj_value(), total_counter)
-        # print(e.training_accuracy(s.batch, s.S[settings.L]))
+        # print(e.training_accuracy(s.batch, s.S[settings.L]), s.n_connections)
         d = delta.Delta_Manager(s)
 
         for node in s.nodes:
@@ -70,12 +67,6 @@ def batch_training_fine_tuning(instance, settings, time_left):
                     no_moves += 1
             s.logging['train_accuracies'][update_number] = e.training_accuracy(s.batch, s.S[settings.L])
 
-            
-            
-
-            # print(f'{no_moves} moves were committed')
-            # print(s.n_connections)
-
             s.select_search_weights(p)
             moves_dict = get_moves_dict(s)
             total_update_counter += 1 
@@ -83,8 +74,6 @@ def batch_training_fine_tuning(instance, settings, time_left):
                 update_interval = min(update_interval + 1, update_interval_end)
                 total_update_counter = 0
         
-
-
         counter += 1
         total_counter += 1
         try:

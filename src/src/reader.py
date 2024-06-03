@@ -12,6 +12,7 @@ class Reader:
         self.settings = settings
         self.dataset = settings.dataset
         self.validation_percentage = settings.validation_percentage
+        self.validation_size = settings.validation_size
         self.batch_size = settings.batch_size
 
     def load_data(self):
@@ -36,14 +37,13 @@ class Reader:
 
         targets = list(set(train_dataset.targets.tolist()))
         
-        train_size = int((1 - self.validation_percentage) * len(train_dataset)) 
-        val_size = len(train_dataset) - train_size
-        train_set, val_set = random_split(train_dataset, [train_size, val_size])
+        train_size = len(train_dataset) - self.validation_size
+        train_set, val_set = random_split(train_dataset, [train_size, self.validation_size])
 
 
         if self.settings.sample_type == "balanced":
             train_set = Subset(train_set, self.get_balanced_indices(targets, train_set, self.settings.batch_size))
-            val_set = Subset(val_set, self.get_balanced_indices(targets, val_set, self.settings.validation_batch_size))
+            val_set = Subset(val_set, self.get_balanced_indices(targets, val_set, self.settings.validation_size))
             test_dataset = Subset(test_dataset, self.get_balanced_indices(targets, test_dataset, self.settings.test_batch_size))
 
         return train_set, val_set, test_dataset
@@ -68,8 +68,8 @@ class Reader:
         train_dataset = Adult(root = "../data", train = True, download = True)
         test_dataset = Adult(root = "../data", train = False, download = True)
         
-        train_size = int((1 - self.validation_percentage) * len(train_dataset)) 
-        val_size = len(train_dataset) - train_size
-        train_set, val_set = random_split(train_dataset, [train_size, val_size])
+        train_size = len(train_dataset) - self.validation_size 
+
+        train_set, val_set = random_split(train_dataset, [train_size, self.validation_size])
 
         return train_set, val_set, test_dataset

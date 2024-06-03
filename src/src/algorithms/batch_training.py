@@ -33,7 +33,7 @@ def batch_training(instance, settings, time_left):
 
     if early_stopping:
         best_weights = s.copy_weights()
-        best_val_accuracy = e.test_accuracy("validation", settings.validation_batch_size, s.W)
+        best_val_accuracy = e.test_accuracy("validation", settings.validation_size, s.W)
         s.logging['val_accuracies'] = [best_val_accuracy]
         s.logging['train_accuracies'] = [e.training_accuracy( s.batch, s.S[s.settings.L])]
     
@@ -46,7 +46,7 @@ def batch_training(instance, settings, time_left):
                 # print(s.obj_value(), e.training_accuracy(s.batch, s.S[s.settings.L]), s.n_connections)
                 s = iterated_improvement(s, time_left - (perf_counter() - start), threshold)
                 if early_stopping and counter % number_iterations == 0:
-                    val_accuracy = e.test_accuracy('validation', settings.validation_batch_size, s.W)
+                    val_accuracy = e.test_accuracy('validation', settings.validation_size, s.W)
                     s.logging['val_accuracies'].append(val_accuracy)
                     s.logging['train_accuracies'].append(e.training_accuracy( s.batch, s.S[s.settings.L]))
                     if val_accuracy > best_val_accuracy:

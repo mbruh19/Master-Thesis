@@ -21,6 +21,7 @@ def ils(solution, time_budget, ps):
             solution.W = {l: torch.clone(best_weights[l]) for l in best_weights}
             solution.evaluate()
         elif obj > best_obj:
+            # print(solution.obj_value(True))
             best_weights = solution.copy_weights()
             best_obj = obj 
         solution.perturb(ps)

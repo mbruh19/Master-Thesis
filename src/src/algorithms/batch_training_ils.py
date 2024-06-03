@@ -13,8 +13,6 @@ def batch_training_ils(instance, settings, time_left):
     time_for_each_batch = settings.single_model_time_limit
 
     early_stopping = settings.early_stopping
-    print(settings.early_stopping)
-    print(early_stopping)
     number_iterations = settings.number_iterations
 
 
@@ -36,7 +34,7 @@ def batch_training_ils(instance, settings, time_left):
 
     if early_stopping:
         best_weights = s.copy_weights()
-        best_val_accuracy = e.test_accuracy("validation", settings.validation_batch_size, s.W)
+        best_val_accuracy = e.test_accuracy("validation", settings.validation_size, s.W)
         s.logging['val_accuracies'] = [best_val_accuracy]
         s.logging['train_accuracies'] = [e.training_accuracy( s.batch, s.S[s.settings.L])]
 
@@ -51,7 +49,7 @@ def batch_training_ils(instance, settings, time_left):
                     # print(s.obj_value(), e.training_accuracy(s.batch, s.S[s.settings.L]), s.n_connections)
                     s = ils(s, time_for_each_batch, ps)
                     if early_stopping and counter % number_iterations == 0:
-                        val_accuracy = e.test_accuracy('validation', settings.validation_batch_size, s.W)
+                        val_accuracy = e.test_accuracy('validation', settings.validation_size, s.W)
                         s.logging['val_accuracies'].append(val_accuracy)
                         s.logging['train_accuracies'].append(e.training_accuracy(s.batch, s.S[s.settings.L]))
                         if val_accuracy > best_val_accuracy:
