@@ -42,7 +42,7 @@ set so="ils"
 set l="True" 
 set ps=25 
 
-set lfstart=../log/SBT_TETL_v2/
+set lfstart=../log/SBT_TETL/
 
 for /L %%s in (0, 1, 4) do (
     for /L %%o in (2, 1, 2) do (
