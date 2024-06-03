@@ -57,8 +57,8 @@ df_long <- tidyr::pivot_longer(df, cols = c("TrainAccuracy", "ValAccuracy"),
 p <- ggplot(df_long, aes(x = Batch, y = Accuracy, color = Type, group = Type)) +
   geom_line() +
   geom_point() +
-  labs(title = "Training and Validation Accuracies for Cross Entropy Objective Function",
-       x = "Batch",
+  labs(title = "Training and Validation Accuracies for the Cross-Entropy Objective Function",
+       x = "Batches",
        y = "Accuracy") +
   scale_x_continuous(breaks = seq(0, length(train_accuracies)*4, 10)) +
   scale_y_continuous(breaks = seq(0, 1, 0.1)) +

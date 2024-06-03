@@ -1,22 +1,37 @@
 rm(list=ls())
 library(jsonlite)
 library(dplyr)
+library(tidyr)
 library(xtable)
 library(ggplot2)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/SBT_TETL")
+file ="SBT_TETL"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, file)
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Tables", file), ".tex", sep="")
+
 files <- list.files()
 
 results <- data.frame()
 
 for (file in files) {
   temp = fromJSON(file)
+  objective_function <- temp$settings$objective_type 
+  if(objective_function == "pairwise"){
+    pos = nchar(file) - 5 
+    objective_function = paste0(objective_function,substr(file, pos, pos))
+  }
   results <- rbind(results, data.frame(
     Seed = temp$settings$seed, 
-    ObjectiveFunction = temp$settings$objective_type,
-    TimeLimit = temp$settings$time_limit, 
+    ObjectiveFunction = objective_function,
+    BatchSize = temp$settings$batch_size/10, 
     Accuracy = temp$Test_accuracy,
-    LocalOptimas = temp$local_optimas
+    LocalOptimas = temp$local_optimas,
+    TimeLimit = temp$settings$time_limit
   ))
 }
 
@@ -24,36 +39,43 @@ summary_stats <- results %>%
   group_by(ObjectiveFunction, TimeLimit) %>%
   summarise(
     Mean = mean(Accuracy),
-    SD = sd(Accuracy),
     .groups = 'drop'
   )
 
 summary_stats <- summary_stats %>%
   mutate(ObjectiveFunction = gsub("_", "-", ObjectiveFunction))
 
-summary_stats <- summary_stats %>%
-  mutate(ObjectiveFunction = gsub("softmax", "max probability", ObjectiveFunction))
 
-# Plot with standard deviation as a shaded area
-p <- ggplot(summary_stats, aes(x = TimeLimit, y = Mean, group = ObjectiveFunction, color = ObjectiveFunction)) +
-  geom_ribbon(aes(ymin = Mean - SD, ymax = Mean + SD, fill = ObjectiveFunction), alpha = 0.2) +
-  geom_line() +  # Connect points with lines
-  geom_point() +  # Show individual data points
-  labs(title = "Test Accuracy for Different Objective Functions for a Single Batch",
-       x = "Time Limit in Seconds",
-       y = "Test Accuracy") +
-  scale_x_continuous(breaks = seq(10, 100, 10)) +  # Adjust x-axis breaks if necessary
-  scale_y_continuous(breaks = seq(0.5, 0.75, 0.05)) +
-  coord_cartesian(xlim = c(10, 101), ylim = c(0.5, 0.75))+
-  theme_minimal() +
-  theme(legend.title = element_blank(), 
-        legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5),
-        panel.background = element_rect(fill = "white", colour = "black"))  # Adjust legend
 
-# Print the plot
-print(p)
+summary_stats
 
-ggsave(filename = "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Figures/SBT_TETL.png", plot = p, dpi = 300, bg = "white")
+final_table <- summary_stats %>%
+  pivot_wider(
+    names_from = TimeLimit,
+    values_from = Mean,
+    names_prefix = "TL: "
+  )
 
+
+
+align_string <- paste("|", paste(rep("c", ncol(final_table) + 1), collapse = "|"), "|", sep="")
+
+caption <- "\\small{\\textbf{The mean test accuracies on MNIST for different time limits. The results are obtained by training a 
+            BNN on a single batch with 200 samples for each digit. The algorithm used is the ILS algorithm
+            with the perturbation size set to 25. The time limit is in seconds.}}"
+
+# Convert to xtable
+final_xtable <- xtable(final_table, align = align_string, caption = caption, label = "SBT_TETL", digits = c(4))
+
+
+latex_code <- print(final_xtable, type = "latex", include.rownames = FALSE, floating = TRUE,
+                    table.placement = "!tb", print.results = FALSE,
+                    hline.after = c(-1, 0, seq(from = 1, to = nrow(final_table))), # Adding lines after each row
+                    sanitize.text.function = function(x){x})
+
+# Wrap the LaTeX code in a center environment
+latex_code <- paste("\\begin{center}", latex_code, "\\end{center}", sep="\n")
+
+# Write the table code to a file
+write(latex_code, file = output_file)
 

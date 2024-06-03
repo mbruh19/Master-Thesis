@@ -3,8 +3,16 @@ library(jsonlite)
 library(dplyr)
 library(xtable)
 library(ggplot2)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/SBT_COF")
+file ="SBT_COF"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, file)
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Figures", file), ".png", sep="")
+
 files <- list.files()
 
 results <- data.frame()
@@ -42,12 +50,12 @@ p <- ggplot(summary_stats, aes(x = BatchSize, y = Mean, group = ObjectiveFunctio
   geom_ribbon(aes(ymin = Mean - SD, ymax = Mean + SD, fill = ObjectiveFunction), alpha = 0.2) +
   geom_line() +  # Connect points with lines
   geom_point() +  # Show individual data points
-  labs(title = "Test Accuracy for Different Objective Functions for a Single Batch",
+  labs(title = "Test Accuracy on MNIST for Different Objective Functions",
        x = "Training Samples per Digit",
        y = "Test Accuracy") +
   scale_x_continuous(breaks = seq(10, 200, 10))+  # Adjust x-axis breaks if necessary
   scale_y_continuous(breaks = seq(0.45, 0.75, 0.05)) + 
-  coord_cartesian(xlim = c(9, 210), ylim = c(0.45, 0.75)) + 
+  coord_cartesian(xlim = c(10, 200), ylim = c(0.45, 0.75)) + 
   theme_minimal() +
   theme(legend.title = element_blank(), 
         legend.position = "bottom",
@@ -57,5 +65,5 @@ p <- ggplot(summary_stats, aes(x = BatchSize, y = Mean, group = ObjectiveFunctio
 # Print the plot
 print(p)
 
-ggsave(filename = "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Figures/SBT_COF.png", plot = p, dpi = 300, bg = "white")
+ggsave(filename = output_file, plot = p, dpi = 300, bg = "white")
 

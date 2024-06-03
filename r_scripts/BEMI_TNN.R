@@ -4,8 +4,15 @@ library(dplyr)
 library(xtable)
 library(ggplot2)
 library(tidyverse)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/BEMI_TNN")
+file ="BEMI_TNN"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, file)
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Tables", file), ".tex", sep="")
 files <- list.files()
 
 results <- data.frame()
@@ -39,18 +46,15 @@ summary_stats <- summary_stats[order(summary_stats$Reg, summary_stats$PS), ]
 
 align_string <- paste("|", paste(rep("c", ncol(summary_stats) + 1), collapse = "|"), "|", sep="")
 
-caption = "Summary statistics for the BeMi ensemble when trained with different perturbation sizes and 
-          different regularization parameters. The random solution initialized assigns 0.1 probability to -1 and 1
-          and 0.8 to 0. The networks trained has a single hidden layer with 10 neurons and is trained for
-          20 seconds each, so the total training time is 900 seconds."
+caption = "\\small{\\textbf{Summary statistics for the BeMi ensemble on MNIST when trained with different perturbation sizes and 
+          different regularization parameters. The networks trained has a single hidden layer with 10 neurons and is trained for
+          20 seconds each, so the total training time is 900 seconds.}}"
 xt <- xtable(summary_stats, align = align_string, caption = caption, label = "BEMI_TNN")
 
 latex_code <- print(xt, type = "latex", include.rownames = FALSE, floating = TRUE,
                     table.placement = "H", print.results = FALSE,
                     hline.after = c(-1, 0, seq(from = 1, to = nrow(summary_stats))), # Adding lines after each row
                     sanitize.text.function = function(x){x})
-
-output_file <- "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/BEMI_TNN.tex"
 
 # Wrap the LaTeX code in a center environment
 latex_code <- paste("\\begin{center}", latex_code, "\\end{center}", sep="\n")

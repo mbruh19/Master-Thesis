@@ -4,8 +4,16 @@ library(dplyr)
 library(xtable)
 library(ggplot2)
 library(tidyverse)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/BEMI_TIME")
+file ="BEMI_TIME"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, file)
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Tables", file), ".tex", sep="")
+
 files <- list.files()
 
 results <- data.frame()
@@ -36,17 +44,15 @@ summary_stats <- summary_stats %>%
 
 align_string <- paste("|", paste(rep("c", ncol(summary_stats) + 1), collapse = "|"), "|", sep="")
 
-caption = "Summary statistics for the BeMi ensemble for different time limits. The
+caption = "\\small{\\textbf{Summary statistics for the BeMi ensemble on MNIST for different time limits. The
           network is a BNN with a single hidden layer with 10 neurons and the training is based on
-          100 images per digit. I use cross entropy as objective function. "
+          100 images per digit. I use cross-entropy as objective function.}}"
 xt <- xtable(summary_stats, align = align_string, caption = caption, label = "BEMI_TIME")
 
 latex_code <- print(xt, type = "latex", include.rownames = FALSE, floating = TRUE,
                     table.placement = "H", print.results = FALSE,
                     hline.after = c(-1, 0, seq(from = 1, to = nrow(summary_stats))), # Adding lines after each row
                     sanitize.text.function = function(x){x})
-
-output_file <- "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/BEMI_TIME.tex"
 
 # Wrap the LaTeX code in a center environment
 latex_code <- paste("\\begin{center}", latex_code, "\\end{center}", sep="\n")

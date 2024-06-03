@@ -1,12 +1,19 @@
-
 rm(list=ls())
 library(jsonlite)
 library(dplyr)
 library(xtable)
 library(ggplot2)
 library(tidyverse)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/MBT")
+file ="MBT"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, file)
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Tables", file), ".tex", sep="")
+
 files <- list.files()
 
 results <- data.frame()
@@ -46,13 +53,11 @@ single_layer_wide <- single_layer %>%
   pivot_wider(names_from = NetworkStructure, values_from = Mean, values_fill = NA) %>%
   mutate(NetworkStructure = "One")
 
-# Pivoting the double layer data
 double_layer_wide <- double_layer %>%
   select(-SD, -Layers) %>%
   pivot_wider(names_from = NetworkStructure, values_from = Mean, values_fill = NA) %>%
   mutate(NetworkStructure = "Two")
 
-# Combining the tables
 final_table <- bind_rows(single_layer_wide, double_layer_wide)
 
 final_table <- final_table %>%
@@ -70,9 +75,6 @@ final_table <- final_table %>%
 final_table <- final_table %>%
   mutate(Algorithm = gsub("batch_training", "Iterated Improvement", Algorithm))
 
-# Printing the final table
-print(final_table)
-
 # Combine single and double layer data
 final_table <- final_table %>%
   mutate(`16` = coalesce(`16`, `16-16`),
@@ -87,24 +89,17 @@ final_table <- final_table %>%
 
 align_string <- paste("|", paste(rep("c", ncol(final_table) + 1), collapse = "|"), "|", sep="")
 
-caption <- "The mean test accuracies on MNIST for different network structures and algorithms. The network is a
+caption <- "\\small{\\textbf{The mean test accuracies on MNIST for different network structures and algorithms. The network is a
             BNN trained with a time limit of 600 seconds. Iterated Improvement and Iterated Local Search refers to
-            Algorithm 4, and here early stopping is used. The validation dataset is 12,000 samples and for
-            II, the validation accuracy is calculated every fourth batch, whereas for ILS, it is after every batch.
+            Algorithm 4, and here early stopping is used. The validation set consists of 12,000 samples and for
+            II, the validation accuracy is calculated every fourth batch, whereas for ILS, it is calculated after every batch.
             The solution with the highest validation accuracy is returned. I set bp equal to 0.2 and ps to 25.
             Each ILS phase is allowed to run for 5 seconds. 
-            For the Aggregation Algorithm, I do not use early stopping, but return the solution at the end. The parameters
-            updateStart, updateEnd and updateIncrease are set to 1, 15 and 10 respectively. For all the algorithms
-            a batch size of 1000 is used. "
+            For the Aggregation Algorithm, I do not use early stopping, but instead return the solution at the end. The parameters
+            updateStart, updateEnd and updateIncrease are set to 1, 15 and 10 respectively. For all the algorithms,
+            a batch size of 1000 is used.}}"
 
-# Convert to xtable
 final_xtable <- xtable(final_table, align = align_string, caption = caption, label = "MBT", digits = c(4))
-
-# Specify the file path
-output_file <- "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/MBT.tex"
-
-# Write to LaTeX file using xtable
-print(final_xtable, file = output_file, type = "latex", include.rownames = FALSE)
 
 
 latex_code <- print(final_xtable, type = "latex", include.rownames = FALSE, floating = TRUE,
@@ -112,9 +107,12 @@ latex_code <- print(final_xtable, type = "latex", include.rownames = FALSE, floa
                     hline.after = c(-1, 0, seq(from = 1, to = nrow(final_table))), # Adding lines after each row
                     sanitize.text.function = function(x){x})
 
-# Wrap the LaTeX code in a center environment
 latex_code <- paste("\\begin{center}", latex_code, "\\end{center}", sep="\n")
 
-# Write the table code to a file
-write(latex_code, file = "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/MBT.tex")
+#latex_code <- gsub("\\\\begin\\{table\\}\\[!tb\\]", "\\\\begin\\{table\\}\\[!tb\\]\\\\resizebox\\{\\\\textwidth\\}\\{!\\}\\{", latex_code)
+
+#latex_code <- gsub("\\\\end\\{tabular\\}", "\\\\end\\{tabular\\} \\}", latex_code)
+
+#latex_code
+write(latex_code, file = output_file)
 

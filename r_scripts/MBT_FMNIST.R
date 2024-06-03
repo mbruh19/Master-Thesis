@@ -4,8 +4,17 @@ library(dplyr)
 library(xtable)
 library(ggplot2)
 library(tidyverse)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/MBAA_DNS")
+file ="MBT_FMNIST"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, file)
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Tables", file), ".tex", sep="")
+
+
 files <- list.files()
 
 results <- data.frame()
@@ -16,12 +25,13 @@ for (file in files) {
     Seed = temp$settings$seed, 
     ObjectiveFunction = temp$settings$objective_type,
     NetworkStructure = paste(temp$settings$network_structure[-c(1, length(temp$settings$network_structure))], collapse = "-"),
-    Accuracy = temp$Test_accuracy
+    Accuracy = temp$Test_accuracy,
+    Algorithm = temp$settings$algorithm
   ))
 }
 
 summary_stats <- results %>%
-  group_by(ObjectiveFunction, NetworkStructure) %>%
+  group_by(ObjectiveFunction, NetworkStructure, Algorithm) %>%
   summarise(
     Mean = mean(Accuracy),
     SD = sd(Accuracy),
@@ -56,15 +66,26 @@ final_table <- bind_rows(single_layer_wide, double_layer_wide)
 final_table <- final_table %>%
   mutate(ObjectiveFunction = gsub("_", "-", ObjectiveFunction))
 
-# Printing the final table
-print(final_table)
+final_table <- final_table %>%
+  mutate(ObjectiveFunction = gsub("softmax", "max probability", ObjectiveFunction))
+
+final_table <- final_table %>%
+  mutate(Algorithm = gsub("batch_training_ils", "Iterated Local Search", Algorithm))
+
+final_table <- final_table %>%
+  mutate(Algorithm = gsub("batch_training_fine_tuning", "Aggregation Algorithm", Algorithm))
+
+final_table <- final_table %>%
+  mutate(Algorithm = gsub("batch_training", "Iterated Improvement", Algorithm))
+
+
+
 
 # Combine single and double layer data
 final_table <- final_table %>%
-  mutate(`64` = coalesce(`64`, `64-64`),
-         `128` = coalesce(`128`, `128-128`),
-         `256` = coalesce(`256`, `256-256`)) %>%
-  select(ObjectiveFunction, NetworkStructure, `64`, `128`, `256`)
+  mutate(`16` = coalesce(`16`, `16-16`),
+         `128` = coalesce(`128`, `128-128`)) %>%
+  select(ObjectiveFunction, NetworkStructure, Algorithm, `16`, `128`)
 
 final_table <- final_table %>%
   rename(
@@ -72,29 +93,28 @@ final_table <- final_table %>%
     `Hidden layers` = NetworkStructure
   )
 
-# Print the final table
+# Printing the final table
 print(final_table)
+
 align_string <- paste("|", paste(rep("c", ncol(final_table) + 1), collapse = "|"), "|", sep="")
 
-caption <- "The mean test accuracies for the Multiple Batch Aggregation Algorithm.
-            The network trained is a BNN with different network structures and with a time limit of 600 seconds.
-            The bp parameter is set to 1, updateStart to 1, updateEnd to 15 and updateIncrese to 10."
-digits_vector <- c(4) # 4 decimals for numeric columns, 0 for others
+caption <- "\\small{\\textbf{The mean test accuracies on Fashion-MNIST for different network structures and algorithms. The network is a
+            BNN trained with a time limit of 600 seconds. Iterated Improvement and Iterated Local Search refers to
+            Algorithm 4, and here early stopping is used. The validation dataset is 12,000 samples and for
+            II, the validation accuracy is calculated every fourth batch, whereas for ILS, it is after every batch.
+            The solution with the highest validation accuracy is returned. I set bp equal to 1 and ps to 25.
+            Each ILS phase is allowed to run for 5 seconds. 
+            For the Aggregation Algorithm, I do not use early stopping, but return the solution at the end. The parameters
+            updateStart, updateEnd and updateIncrease are set to 1, 15 and 10 respectively. For all the algorithms
+            a batch size of 1000 is used.}}"
 
 # Convert to xtable
-final_xtable <- xtable(final_table, align = align_string, caption = caption,
-                       digits = digits_vector, label = "MBAA_DNS")
+final_xtable <- xtable(final_table, align = align_string, caption = caption, label = "MBT_FMNIST", digits = c(4))
 
-# Specify the file path
-output_file <- "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/MBAA_DNS.tex"
-
-# Write to LaTeX file using xtable
-print(final_xtable, file = output_file, type = "latex", include.rownames = FALSE)
 
 
 latex_code <- print(final_xtable, type = "latex", include.rownames = FALSE, floating = TRUE,
-                    digits = digits_vector,
-                    table.placement = "H", print.results = FALSE,
+                    table.placement = "!tb", print.results = FALSE,
                     hline.after = c(-1, 0, seq(from = 1, to = nrow(final_table))), # Adding lines after each row
                     sanitize.text.function = function(x){x})
 
@@ -102,5 +122,5 @@ latex_code <- print(final_xtable, type = "latex", include.rownames = FALSE, floa
 latex_code <- paste("\\begin{center}", latex_code, "\\end{center}", sep="\n")
 
 # Write the table code to a file
-write(latex_code, file = "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/MBAA_DNS.tex")
+write(latex_code, file = output_file)
 

@@ -71,19 +71,19 @@ summary_stats <- summary_stats %>%
 
 align_string <- paste("|", paste(rep("c", ncol(summary_stats) + 1), collapse = "|"), "|", sep="")
 
-caption = "Mean accuracies for the BeMi ensemble. Mean1 and SD1 is for a BNN with a single hidden layer with
+caption = "\\small{\\textbf{Mean accuracies on MNIST for the BeMi ensemble. Mean1 and SD1 is for a BNN with a single hidden layer with
           10 neurons. Mean2 and SD2 is for a BNN with a hidden layer with 10 neurons followed by a hidden layer
           with 3 neurons. The training time is the total training time, so each of the 45 networks are trained for
           5 and 10 seconds respectively. The number of images, is the total number of images, so there is 10
-          and 100 images for each digit respectively. "
+          and 100 images for each digit respectively.}}"
 xt <- xtable(summary_stats, align = align_string, caption = caption, label = "BEMI_OBJ", digits = c(0,0,0, 0, 2, 2, 2, 2))
 
 latex_code <- print(xt, type = "latex", include.rownames = FALSE, floating = TRUE,
-                    table.placement = "H", print.results = FALSE,
+                    table.placement = "!tb", print.results = FALSE,
                     hline.after = c(-1, 0, seq(from = 1, to = nrow(summary_stats))), # Adding lines after each row
                     sanitize.text.function = function(x){x})
 
-output_file <- "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Tables/BEMI_OBJ.tex"
+output_file <- "C:/Users/Mads/OneDrive/SDU/Master-Thesis/tex/Thesis/Tables/BEMI_OBJ.tex"
 
 # Wrap the LaTeX code in a center environment
 latex_code <- paste("\\begin{center}", latex_code, "\\end{center}", sep="\n")

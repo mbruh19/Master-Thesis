@@ -3,8 +3,15 @@ library(jsonlite)
 library(dplyr)
 library(xtable)
 library(ggplot2)
+library(rstudioapi)
 
-setwd("C:/Users/Mads/OneDrive/SDU/Thesis/bnn/log/BNN_vs_TNN_v2")
+file ="BNN_vs_TNN_cs"
+log_path <-dirname(rstudioapi::getActiveDocumentContext()$path)
+log_path <- file.path(log_path, "../log")
+log_path <- file.path(log_path, "BNN_vs_TNN")
+setwd(log_path)
+
+output_file <- paste(file.path(dirname(rstudioapi::getActiveDocumentContext()$path), "../tex/Thesis/Figures", file), ".png", sep="")
 files <- list.files()
 
 results <- data.frame()
@@ -49,7 +56,7 @@ p <- ggplot(summary_stats, aes(x = TimeLimit, y = Mean,
   geom_ribbon(aes(ymin = Mean - SD, ymax = Mean + SD, fill = Label), alpha = 0.2) +
   geom_line() +  # Connect points with lines
   geom_point() +  # Show individual data points
-  labs(title = "Comparison of BNN vs TNN with the Cross Entropy Objective Function",
+  labs(title = "Comparison of BNN vs TNN on MNIST with the Cross Entropy Objective Function",
        x = "Time Limit in Seconds",
        y = "Test Accuracy") +
   scale_x_continuous(breaks = seq(30, 300, 30))+  # Adjust x-axis breaks if necessary
@@ -64,5 +71,5 @@ p <- ggplot(summary_stats, aes(x = TimeLimit, y = Mean,
 # Print the plot
 print(p)
 
-ggsave(filename = "C:/Users/Mads/OneDrive/SDU/Thesis/bnn/tex/Thesis/Figures/BNN_vs_TNN_cs.png", plot = p, dpi = 300, bg = "white")
+ggsave(filename = output_file, plot = p, dpi = 300, bg = "white")
 
