@@ -1,7 +1,9 @@
 \section*{Abstract}
-Abstract in English...
+This thesis investigates the feasibility of training binary and ternary neural networks using local search methods. The discrete nature of these networks makes the training a discrete optimization problem, and this work presents several findings to make the delta evaluation in the local search efficient. \\
 
-\section*{Resume}
-Resume in Danish....
+\noindent Several objective functions, network architectures, and training algorithms are explored to identify effective strategies for training discrete neural networks. Experimental analysis on the MNIST, Fashion-MNIST, and Adult datasets demonstrates that local search methods, particularly the proposed aggregation algorithm and the proposed integer objective function, can achieve competetive accuracies with relatively simple network architectures. In particular, the aggregation algorithm reaches a mean accuracy of 91.53 \% on the MNIST dataset, 82.66 \% on the Fashion-MNIST dataset, and 83.88 \% on the Adult dataset.  \\
 
+\noindent Furthermore, it is shown that the BeMi ensemble introduced by \cite{ambrogio2023}, scales well with more data achieving accuracies as high as 86.84 \% on the MNIST dataset and 77.38 \% on the Fashion-MNIST with only 1,000 training images. \\
+
+\noindent These results show the potential of local search as a scalable alternative to traditional gradient-based methods, especially in resource-constrained environments.
 \newpage 

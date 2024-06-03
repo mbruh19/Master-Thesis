@@ -1,0 +1,59 @@
+\begin{center}
+% latex table generated in R 4.2.2 by xtable 1.8-4 package
+% Sat Jun  1 18:09:47 2024
+\begin{table}[!tb]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+  \hline
+Objective function & Hidden layers & Algorithm & 16 & 128 \\ 
+  \hline
+brier & One & Iterated Improvement & 0.7670 & 0.7667 \\ 
+   \hline
+brier & One & Aggregation Algorithm & 0.7644 & 0.8056 \\ 
+   \hline
+brier & One & Iterated Local Search & 0.7471 & 0.7749 \\ 
+   \hline
+cross-entropy & One & Iterated Improvement & 0.7295 & 0.7596 \\ 
+   \hline
+cross-entropy & One & Aggregation Algorithm & 0.7236 & 0.7531 \\ 
+   \hline
+cross-entropy & One & Iterated Local Search & 0.7188 & 0.7673 \\ 
+   \hline
+integer & One & Iterated Improvement & 0.6709 & 0.7951 \\ 
+   \hline
+integer & One & Aggregation Algorithm & 0.5622 & 0.8058 \\ 
+   \hline
+integer & One & Iterated Local Search & 0.7314 & 0.7889 \\ 
+   \hline
+brier & Two & Iterated Improvement & 0.7220 & 0.6312 \\ 
+   \hline
+brier & Two & Aggregation Algorithm & 0.5324 & 0.7691 \\ 
+   \hline
+brier & Two & Iterated Local Search & 0.6948 & 0.6639 \\ 
+   \hline
+cross-entropy & Two & Iterated Improvement & 0.6956 & 0.6550 \\ 
+   \hline
+cross-entropy & Two & Aggregation Algorithm & 0.6125 & 0.7061 \\ 
+   \hline
+cross-entropy & Two & Iterated Local Search & 0.6764 & 0.6756 \\ 
+   \hline
+integer & Two & Iterated Improvement & 0.5507 & 0.8090 \\ 
+   \hline
+integer & Two & Aggregation Algorithm & 0.4947 & 0.8266 \\ 
+   \hline
+integer & Two & Iterated Local Search & 0.6776 & 0.8058 \\ 
+   \hline
+\end{tabular}
+\caption{\small{\textbf{The mean test accuracies on Fashion-MNIST for different network structures and algorithms. The network is a
+            BNN trained with a time limit of 600 seconds. Iterated Improvement and Iterated Local Search refers to
+            Algorithm 4, and here early stopping is used. The validation dataset is 12,000 samples and for
+            II, the validation accuracy is calculated every fourth batch, whereas for ILS, it is after every batch.
+            The solution with the highest validation accuracy is returned. I set bp equal to 1 and ps to 25.
+            Each ILS phase is allowed to run for 5 seconds. 
+            For the Aggregation Algorithm, I do not use early stopping, but return the solution at the end. The parameters
+            updateStart, updateEnd and updateIncrease are set to 1, 15 and 10 respectively. For all the algorithms
+            a batch size of 1000 is used.}}} 
+\label{MBT_FMNIST}
+\end{table}
+
+\end{center}

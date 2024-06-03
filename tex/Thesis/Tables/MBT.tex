@@ -1,6 +1,6 @@
 \begin{center}
 % latex table generated in R 4.2.2 by xtable 1.8-4 package
-% Sat May 25 12:43:53 2024
+% Sun Jun  2 21:02:11 2024
 \begin{table}[H]
 \centering
 \begin{tabular}{|c|c|c|c|c|}
@@ -44,15 +44,15 @@ integer & Two & Aggregation Algorithm & 0.4416 & 0.9153 \\
 integer & Two & Iterated Local Search & 0.7095 & 0.8766 \\ 
    \hline
 \end{tabular}
-\caption{The mean test accuracies on MNIST for different network structures and algorithms. The network is a
+\caption{\small{\textbf{The mean test accuracies on MNIST for different network structures and algorithms. The network is a
             BNN trained with a time limit of 600 seconds. Iterated Improvement and Iterated Local Search refers to
-            Algorithm 4, and here early stopping is used. The validation dataset is 12,000 samples and for
-            II, the validation accuracy is calculated every fourth batch, whereas for ILS, it is after every batch.
+            Algorithm 4, and here early stopping is used. The validation set consists of 12,000 samples and for
+            II, the validation accuracy is calculated every fourth batch, whereas for ILS, it is calculated after every batch.
             The solution with the highest validation accuracy is returned. I set bp equal to 0.2 and ps to 25.
             Each ILS phase is allowed to run for 5 seconds. 
-            For the Aggregation Algorithm, I do not use early stopping, but return the solution at the end. The parameters
-            updateStart, updateEnd and updateIncrease are set to 1, 15 and 10 respectively. For all the algorithms
-            a batch size of 1000 is used. } 
+            For the Aggregation Algorithm, I do not use early stopping, but instead return the solution at the end. The parameters
+            updateStart, updateEnd and updateIncrease are set to 1, 15 and 10 respectively. For all the algorithms,
+            a batch size of 1000 is used.}}} 
 \label{MBT}
 \end{table}
 

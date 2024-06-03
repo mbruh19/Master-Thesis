@@ -1,27 +1,27 @@
 \subsection{Solution Improvement}
-Recall, that the goal of the classification problem is to be able to classify test instances that are not seen during training. During training the model is trained on batches of training instances and an objective function is used to evaluate the quality of the model. I will test the effect of using a single batch compared to using several and a key ingrediense in most of my algorithms are the iterated improvement algorithm. In words, this algorithm takes a solution and search for improvements. I do this by iterating through the neurons in the network as described earlier. For each neuron, it takes the best move found and checks whether this is an improvement, and if it is, the move is commited and the current solution is updated. The algorithm only stops whenever the time limit has been reached or the solution has reached a local optima, which is when all the neurons have been checked without finding an improvement. In practice it is quite fast to end up in a local optima for a single batch The pseudocode for this algorithm can be seen in Algorithm \ref{iterated_improvement}. 
+Recall, that the goal of the classification problem is to be able to classify test samples that are not seen during training. During training, the model is trained on batches of training samples, and an objective function is used to evaluate the quality of the model. I will test the effect of using a single batch compared to using several, and a key ingredient in most of my algorithms is the iterated improvement algorithm. In words, this algorithm takes a solution and searches for improvements. I do this by iterating through the neurons in the network as described earlier. For each neuron, it takes the best move found and checks whether this is an improvement, and if it is, the move is committed and the current solution is updated. The algorithm only stops when the time limit has been reached or the solution has reached a local optima, which is when all the neurons have been checked without finding an improvement. In practice, it is quite fast to end up in a local optima for a single batch. The pseudocode for this algorithm can be seen in Algorithm \ref{iterated_improvement}. \\
 
-\begin{algorithm}[H]
+\begin{algorithm}[!tb]
     \caption{Pseudocode for Iterated Improvement} \label{iterated_improvement}
-    \begin{algorithmic}[1]  % The '1' argument enables line numbering
+    \begin{algorithmic}[1] 
         \State \textbf{Input:}
         \State \hspace{\algorithmicindent} Initial solution $currentSolution$
         \State \hspace{\algorithmicindent} Time limit $timeLimit$
         \State $startTime \gets$ current time
-        \While{current time $-$ $startTime < timeLimit$}  % More explicit time check
+        \While{current time $-$ $startTime < timeLimit$}  
             \State Shuffle the nodes of $currentSolution$
             \State $improvementFlag \gets \text{False}$
             \For{each $node$ in $currentSolution$}
                 \State $bestMove \gets$ findBestMove($currentSolution$, $node$)
                 \If{delta value of  $bestMove > 0 $}
-                    \State applyMove($currentSolution$, $bestMove$)
+                    \State $currentSolution \gets $ applyMove($currentSolution$, $bestMove$)
                     \State $improvementFlag \gets \text{True}$
                 \EndIf
-                \If{current time $-$ $startTime \geq timeLimit$}  % Time check within loop
+                \If{current time $-$ $startTime \geq timeLimit$}  
                     \State \textbf{return} $currentSolution$
                 \EndIf
             \EndFor
-            \If{$improvementFlag = \text{False}$}  % No improvements found
+            \If{$improvementFlag = \text{False}$}  
                 \State \textbf{return} $currentSolution$
             \EndIf
         \EndWhile
@@ -29,11 +29,11 @@ Recall, that the goal of the classification problem is to be able to classify te
     \end{algorithmic}
 \end{algorithm}
 
-\noindent Only using Algorithm \ref{iterated_improvement} will typically not yield good results. While training a neural network many local optimas are usually visited and traditional neural network training has several techniques to escape from a local optima. I will use a simple optimization metaheuristic, iterated local search (ILS), to escape from the local optima. This metaheuristic works by taking the current solution, which is a locally optimal solution, and use it to get another solution which is no longer locally optimal. Afterwards, iterated improvement will be applied to the new solution until it arrives at a local optima and the process repeats itself until the solution has converged or the time limit has been reached. The strategy used to get another solution from the current solution is called perturbing. In the context of training BNNs and TNNs it works by taking a solution and randomly change the values of a number of the weights. The important parameter here is how many weights to change values of. If too few weights are changed, there is a high chance that the solution falls back to the same local optima it came from. On the other hand, if too many weights are changed, it could be the same as using random restart, which could mean that the solution quality does not improve much. The pseudocode is given in Algorithm \ref{ils}. 
+\noindent Using only Algorithm \ref{iterated_improvement} will typically not yield good results. While training a neural network, many local optima are usually visited, and traditional neural network training has several techniques to escape from a local optima. I will use a simple optimization metaheuristic, iterated local search (ILS), to escape from the local optima. This metaheuristic works by taking the current solution, which is a locally optimal solution, and use it to get another solution, which is no longer locally optimal. Afterward, iterated improvement will be applied to the new solution until it arrives at a local optima and the process repeats itself until the solution has converged or the time limit has been reached. The strategy used to get another solution from the current solution is called perturbation. In the context of training BNNs and TNNs, it works by taking a solution and randomly changing the values of a number of the weights. The important parameter here is how many weights to change values of. If too few weights are changed, there is a high chance that the solution falls back to the same local optima it came from. On the other hand, if too many weights are changed, it could be the same as using random restart, which could mean that the solution quality does not improve much. The pseudocode is given in Algorithm \ref{ils}. \\
 
-\noindent Another problematic aspect of this algorithm is that it is more difficult to determine when the model has converged. Instead of a convergence criterion I use a time limit, such that the runtime is controlled. A convergence criterion could be to set a maximum number of perturbations allowed without ending up in a local optima that is better than the best seen so far. 
+\noindent Another problematic aspect of this algorithm is that it is more difficult to determine when the model has converged. Instead of a convergence criterion, I use a time limit, such that the runtime is controlled. A convergence criterion could be to set a maximum number of perturbations allowed without ending up in a local optima that is better than the best seen so far. 
 
-\begin{algorithm}[H]
+\begin{algorithm}[!tb]
     \caption{Pseudocode for Iterated Local Search} \label{ils}
     \begin{algorithmic}[1]
         \State \textbf{Input:}
